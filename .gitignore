@@ -205,3 +205,20 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+ # LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.pdf
+
+# Data files
+*.csv
+*.zip
+*.json
+!raw_data_sample.csv
+
+# OS generated files
+.DS_Store
+Thumbs.db
