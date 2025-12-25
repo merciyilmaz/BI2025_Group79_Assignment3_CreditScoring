@@ -1,0 +1,159 @@
+\documentclass[sigconf]{acmart}
+
+\AtBeginDocument{ \providecommand\BibTeX{ Bib\TeX } }
+\setcopyright{rightsretained}
+\copyrightyear{2025}
+\acmYear{2025}
+\acmDOI{XXXXXXX.XXXXXXX}
+
+\acmConference[BI 2025]{Business Intelligence}{Vienna/Austria}{December 2025}
+
+\begin{document}
+
+\title{BI2025 Assignment 3 Interim Report - Group 79}
+%% ---Authors: Dynamically added ---
+
+          \author{Mehmet Fatih Dogan}
+          \authornote{Student A, Matr.Nr.: 12437437}
+          \affiliation{
+            \institution{TU Wien}
+            \country{Austria}
+          }
+          
+          \author{Merve Yilmaz}
+          \authornote{Student B, Matr.Nr.: 12536887}
+          \affiliation{
+            \institution{TU Wien}
+            \country{Austria}
+          }
+
+\begin{abstract}
+This report details the data preparation and exploratory analysis phases of a predictive modeling project within a Business Intelligence context. Following the CRISP-DM methodology, we conducted a rigorous data cleaning process on an initial dataset of 8,799 records. By identifying and removing 2,387 erroneous entries—including extreme outliers such as ages reaching 1,808—the dataset was stabilized to 6,412 plausible records. Furthermore, feature engineering was performed through categorical binning of age and income variables to capture non-linear patterns. To ensure model compatibility, we implemented Label Encoding and Z-score Standardization, centering features and reducing bias from differing scales. The resulting preprocessed dataset provides a robust foundation for subsequent machine learning tasks, ensuring data integrity and improved predictive reliability.
+\end{abstract}
+
+\ccsdesc[500]{Computing methodologies~Machine learning}
+\ccsdesc[500]{Information systems~Data mining}
+\keywords{CRISP-DM, Provenance, Knowledge Graph, Credit Scoring}
+
+\maketitle
+
+%% --- 1. Business Understanding ---
+\section{Business Understanding}
+
+\subsection{Data Source and Scenario}
+This project utilizes the Customer Credit Score dataset to automate the risk assessment process for a financial institution. The scenario focuses on identifying high-risk applicants to minimize potential loan defaults.
+Our data source is: https://www.kaggle.com/datasets/systemdesigner/samplecustomerscore and our Scenario provide best model for credit risk calculation
+
+\subsection{Business Objectives}
+Minimize financial losses by accurately predicting loan default probability and identifying high-risk applicants before approval.
+
+%% --- 2. Data Understanding ---
+\section{Data Understanding}
+\textbf{Dataset Description:} Comprehensive dataset containing customer demographics, financial indicators, credit history, and payment behavior.
+
+The following features were identified in the dataset:
+
+\begin{table}[h]
+\centering
+\caption{Raw Data Features and Descriptions}
+\label{tab:raw_features}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Feature Name} & \textbf{Data Type} & \textbf{Description} \\ \hline
+\texttt{age} & float & Age of the customer \\ \hline
+\texttt{annual\_income} & float & Total yearly income \\ \hline
+\texttt{credit\_history\_age} & integer & Age of credit history (months) \\ \hline
+\texttt{credit\_mix} & string & Type of accounts (Good/Std/Bad) \\ \hline
+\texttt{id} & string & Unique record identifier \\ \hline
+\texttt{interest\_rate} & float & Average interest rate on loans \\ \hline
+\texttt{monthly\_salary} & float & Net monthly take-home pay \\ \hline
+\texttt{target} & integer & Credit score classification \\ \hline
+\end{tabular}
+\end{table}
+
+%% --- 3. Data Preparation ---
+\section{Data Preparation}
+\subsection{Data Cleaning}
+To ensure the integrity of our predictive model, we performed a rigorous data cleaning process focused on outlier mitigation and handling missing values. 
+
+\textbf{Outlier Analysis:} Before cleaning, an exploratory analysis was conducted to identify data quality issues. As shown in Figure~\ref{fig:rawoutliers}, the raw dataset contained extreme anomalies, including a maximum age of 1,808 and annual income values reaching 2.8 million. These physically and financially impossible values were identified as significant noise.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\linewidth]{raw_outliers.png}
+  \caption{Boxplot analysis showing extreme outliers in the raw Age and Income features prior to cleaning.}
+  \label{fig:rawoutliers}
+\end{figure}
+
+Following the identification of outliers, we filtered the dataset to include only plausible records. The original dataset of 8,799 rows was reduced to 6,412 clean rows by removing 2,387 erroneous entries. As shown in Figure~\ref{fig:cleaning}, the resulting age distribution now aligns with realistic biological expectations, capped at 134.
+
+\begin{itemize} 
+    \item \textbf{Outlier Removal:} We identified and removed 2,387 records that contained physically and financially impossible values (e.g., age of 1,808 and \texttt{annual\_income} of 2.8M). 
+    \item \textbf{Final Dataset:} After cleaning, the dataset size was reduced to 6,412 rows. 
+    \item \textbf{Data Stabilization:} This process stabilized the features, reducing the maximum age to 134 and the maximum \texttt{annual\_income} to 174,098.
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\linewidth]{cleaning_result.png}
+  \caption{Data distribution after removing extreme outliers (Age and Income).}
+  \label{fig:cleaning}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{cleaned_stats_table.png}
+    \caption{Descriptive statistics of the dataset after removing outliers and invalid entries ($N=6,412$).}
+    \label{fig:cleaned_stats}
+\end{figure}
+
+As shown in Figure \ref{fig:cleaned_stats}, the dataset's central tendencies and ranges have been stabilized. Specifically, extreme values in the \texttt{age} and \texttt{annual\_income} columns were addressed to ensure the integrity of the subsequent scaling process.
+
+\subsection{Feature Engineering (Binning)}
+We applied a binning strategy to transform continuous numerical features into discrete categorical variables to capture non-linear patterns. 
+
+\begin{itemize} 
+    \item \textbf{Age Groups:} Customers were categorized into 'Young' (0-30), 'Adult' (30-50), and 'Senior' (50+). The resulting distribution is shown in Figure~\ref{fig:agebinning}.
+    \item \textbf{Income Levels:} \texttt{annual\_income} was divided into 'Low' (<20k), 'Medium' (20k-70k), and 'High' (>70k). The classification of these tiers is visualized in Figure~\ref{fig:incomebinning}.
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\linewidth]{binning_result.png}
+  \caption{Distribution of customer records across Age Group categories.}
+  \label{fig:agebinning}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\linewidth]{income_binning.png}
+  \caption{Distribution of customer records across Income Level categories.}
+  \label{fig:incomebinning}
+\end{figure}
+
+In addition to individual feature distributions, the interaction between these two binned variables was analyzed. Figure~\ref{fig:binrelation} presents a heatmap illustrating the cross-tabulation of Age Groups and Income Levels, providing a comprehensive view of the prepared features.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.75\linewidth]{binning_relationship.png}
+  \caption{Heatmap of the relationship between discretized Age and Income features.}
+  \label{fig:binrelation}
+\end{figure}
+
+\subsection{Scaling and Encoding}
+To finalize the data preparation phase and ensure model compatibility, we performed categorical encoding and numerical scaling as highlighted in the preliminary analysis.
+
+\textbf{Label Encoding:} Since the binned features (\textit{Age Groups} and \textit{Income Levels}) represent ordinal data, we applied \textit{Label Encoding} to convert these categories into numerical formats. This allows the machine learning algorithms to process demographic segments as ranked variables without losing their inherent order.
+
+\textbf{Feature Scaling:} To prevent features with larger numerical ranges, such as \texttt{annual\_income}, from disproportionately influencing the model, we implemented \textit{Standardization (Z-score normalization)}. This process rescales the features to have a mean of 0 and a standard deviation of 1. As illustrated in Figure~\ref{fig:scaling}, this stabilization ensures that all features contribute equally to the model's weight updates[cite: 8, 68].
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{scaling_result.png}
+  \caption{Comparison of numerical feature distributions before and after Z-score Standardization.}
+  \label{fig:scaling}
+\end{figure}
+\clearpage
+
+
+\end{document}
