@@ -10,7 +10,7 @@
 
 \begin{document}
 
-\title{BI2025 Assignment 3 Interim Report - Group 79}
+\title{BI2025 Assignment 3 Report - Group 79}
 %% ---Authors: Dynamically added ---
 
           \author{Mehmet Fatih Dogan}
@@ -28,24 +28,15 @@
           }
 
 \begin{abstract}
-This report details the data preparation and exploratory analysis phases of a predictive modeling project within a Business Intelligence context. Following the CRISP-DM methodology, we conducted a rigorous data cleaning process on an initial dataset of 8,799 records. By identifying and removing 2,387 erroneous entries—including extreme outliers such as ages reaching 1,808—the dataset was stabilized to 6,412 plausible records. Furthermore, feature engineering was performed through categorical binning of age and income variables to capture non-linear patterns. To ensure model compatibility, we implemented Label Encoding and Z-score Standardization, centering features and reducing bias from differing scales. The resulting preprocessed dataset provides a robust foundation for subsequent machine learning tasks, ensuring data integrity and improved predictive reliability.
+This report documents the end-to-end data analytics lifecycle for a credit score classification project, following the CRISP-DM methodology and utilizing graph-based provenance documentation for transparency. We conducted a rigorous data cleaning process on an initial dataset of 8,799 records, stabilizing it to 6,412 records by removing extreme outliers, such as impossible age values of 1,808. Feature engineering, including categorical binning and Z-score standardization, provided a robust foundation for modeling. We implemented an XGBoost classifier, optimized through hyper-parameter tuning, which achieved a final accuracy of 0.8309, successfully meeting our predefined business success criteria. Furthermore, we performed a bias analysis on the 'Occupation' attribute to ensure algorithmic fairness. The project concludes with a hybrid deployment recommendation and a comprehensive monitoring plan, all recorded within a PROV-O compliant knowledge graph to ensure full reproducibility.
 \end{abstract}
-
-\ccsdesc[500]{Computing methodologies~Machine learning}
-\ccsdesc[500]{Information systems~Data mining}
-\keywords{CRISP-DM, Provenance, Knowledge Graph, Credit Scoring}
 
 \maketitle
 
-%% --- 1. Business Understanding ---
 \section{Business Understanding}
-
 \subsection{Data Source and Scenario}
-This project utilizes the Customer Credit Score dataset to automate the risk assessment process for a financial institution. The scenario focuses on identifying high-risk applicants to minimize potential loan defaults.
-Our data source is: https://www.kaggle.com/datasets/systemdesigner/samplecustomerscore and our Scenario provide best model for credit risk calculation
-
-\subsection{Business Objectives}
-Minimize financial losses by accurately predicting loan default probability and identifying high-risk applicants before approval.
+This project utilizes the Customer Credit Score dataset to automate the risk assessment process for a financial institution. The scenario focuses on identifying high-risk applicants to minimize potential loan defaults. The data source is obtained from Kaggle (\url{https://www.kaggle.com/datasets/systemdesigner/samplecustomerscore}) and the primary goal is to provide an optimized model for credit risk calculation.
+\subsection{Business Objectives} Minimize financial losses by accurately predicting loan default probability and identifying high-risk applicants before approval.
 
 %% --- 2. Data Understanding ---
 \section{Data Understanding}
@@ -153,7 +144,92 @@ To finalize the data preparation phase and ensure model compatibility, we perfor
   \caption{Comparison of numerical feature distributions before and after Z-score Standardization.}
   \label{fig:scaling}
 \end{figure}
-\clearpage
 
+%% --- 4. Modeling ---
+\section{Modeling}
+
+\subsection{Algorithm Selection and Hyperparameter Configuration}
+For the credit score classification task, we selected the \textbf{XGBoost (Extreme Gradient Boosting)} algorithm. This choice was justified by its ability to handle structured data efficiently and its robust performance against overfitting through built-in regularization. 
+
+The model was optimized using a manual grid search focusing on the \textit{learning\_rate} parameter. As shown in Figure~\ref{fig:tuning}, the F1-score was monitored across various rates (0.01 to 0.3) to identify the optimal balance between training speed and generalization.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\linewidth]{tuning_plot.png}
+  \caption{Hyperparameter tuning results showing the impact of Learning Rate on the Validation F1-Score.}
+  \label{fig:tuning}
+\end{figure}
+
+\subsection{Final Training Run}
+After identifying the optimal learning rate of 0.05, the final model was retrained on the merged training and validation sets, representing approximately 80\% of the cleaned data. This step ensured that the model utilized the maximum available information to learn underlying financial patterns before final evaluation. This final training activity was recorded in the provenance graph under the activity \texttt{:train\_and\_finetune\_model}, ensuring a traceable and reproducible transition from hyperparameter optimization to the final model entity.
+
+%% --- 5. Evaluation ---
+\section{Evaluation}
+
+\subsection{Performance Evaluation}
+The final XGBoost model was evaluated on a hold-out test set comprising 20\% of the cleaned data. The model achieved a final accuracy of \textbf{0.8309}, indicating a high level of predictive reliability. To understand the model's behavior across different credit classes, we analyzed the Confusion Matrix (see Figure 8).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.85\linewidth]{confusion_matrix.png}
+  \caption{Confusion Matrix showing the model's performance across 'Good', 'Standard', and 'Poor' credit categories.}
+  \label{fig:confusion}
+\end{figure}
+
+The matrix reveals that the model is particularly effective at identifying 'Standard' and 'Good' credit scores. The low rate of misclassification between the 'Poor' and 'Good' categories is a critical result for financial risk management, as it minimizes the risk of approving high-risk applicants.
+
+\subsection{Benchmarking}
+To validate the model's effectiveness, we established the following baselines:
+\begin{itemize}
+    \item \textbf{Trivial Baseline:} A random classifier for this 3-class problem yields \textasciitilde{}33.3\% accuracy.
+    \item \textbf{Majority Class Baseline:} A Zero-Rule classifier that consistently predicts 'Standard' yields \textasciitilde{}53\% accuracy.
+    \item \textbf{State-of-the-Art (SOTA):} Existing literature on the Credit Score Classification dataset reports accuracies in the 0.75 - 0.85 range for optimized gradient boosting implementations.
+\end{itemize}
+
+\subsection{Comparison and Reflection}
+The final model (\textbf{Accuracy: 0.8309}) significantly outperforms both the random (0.33) and majority-class (0.53) baselines. This performance aligns with high-tier SOTA benchmarks, confirming the effectiveness of our XGBoost configuration and feature engineering strategy. 
+
+Reflecting on our initial success criteria from Phase 1, which targeted a performance threshold of \textbf{0.80}, our model comfortably satisfies the requirements for a reliable credit risk assessment tool. This success ensures that the model can effectively support the business goal of minimizing loan default losses.
+
+\subsection{Fairness and Bias Analysis}
+A dedicated fairness analysis was conducted using 'Occupation' as a protected attribute. We calculated the predictive accuracy across different professional groups to ensure the algorithm does not exhibit systematic bias. The results showed a balanced performance distribution, suggesting that the model treats various occupational backgrounds equitably and does not inherit socio-economic biases present in the raw data.
+
+
+%% --- 6. Deployment ---
+\section{Deployment}
+
+\subsection{Deployment Recommendations}
+Since our model achieved an accuracy of \textbf{0.8309}, which exceeds our initial target of 0.80, we recommend integrating this XGBoost classifier as a decision-support tool in the bank's loan approval process. High-confidence predictions (where the model is very sure about a 'Good' or 'Poor' rating) can be automated to speed up the workflow. However, we suggest a hybrid approach where borderline 'Standard' cases are flagged for manual review by a credit officer to ensure the final decision is as accurate as possible.
+
+\subsection{Ethical Aspects and Risks}
+To address ethical concerns, we performed a bias analysis on the 'Occupation' feature. The results showed that the model performs consistently across different professional groups, meaning it does not unfairly discriminate based on a person's job. The main risk going forward is "Data Drift." Because our training was based on a specific cleaned dataset of 6,412 records, changes in the global economy or inflation could make our 2025/2026 data outdated. The bank must ensure that the model is checked regularly to maintain its fairness and accuracy over time.
+
+\subsection{Monitoring Plan}
+To keep the system reliable after it goes live, we have set up two main monitoring triggers:
+\begin{itemize}
+    \item \textbf{Performance Alert:} If the model's F1-score falls below 0.75 on new monthly data, the system should trigger an alert for retraining. 
+    \item \textbf{Data Shift:} We will monitor the distribution of key features like 'annual\_income'. If the average income levels of new applicants shift by more than 15\% compared to our training baseline, the model should be recalibrated to handle the new data distribution.
+\end{itemize}
+
+\subsection{Reproducibility Reflection}
+The reproducibility of this experiment is guaranteed by our use of the PROV-O documentation system. Every step of the CRISP-DM cycle—from the initial cleaning of impossible values like the 1,808-year-old outliers to the selection of the optimal \textbf{0.05 learning rate} for XGBoost—is logged as a traceable activity. By following the metadata in our Knowledge Graph and the provided GitHub repository, any other team member can recreate these exact results.
+
+%% --- 7. Conclusion ---
+\section{Conclusion}
+
+\subsection{Overall Findings}
+The project successfully demonstrated that a systematic CRISP-DM approach can transform a noisy dataset into a high-performing predictive tool. By stabilizing the dataset from 8,799 to 6,412 records, we provided a robust foundation for our XGBoost classifier. The final model not only meets our business goals but does so while maintaining a fair and transparent decision-making process.
+
+\subsection{Lessons Learned}
+A primary lesson learned was that \textbf{Data Understanding} is the most critical phase; the model's success was largely due to identifying extreme outliers early on. We also learned that using a Knowledge Graph for documentation forces a level of discipline in tracking hyperparameter changes (like our 0.05 learning rate) that standard coding often misses. This transparency is vital for trust in financial AI systems.
+
+
+\section{Availability and Licensing}
+To ensure reproducibility and transparency, all materials related to this study are publicly available:
+\begin{itemize}
+    \item \textbf{Repository URI:} \url{https://github.com/merciyilmaz/BI2025_Group79_Assignment3_CreditScoring}
+    \item \textbf{Software License:} The source code is licensed under the \textbf{GNU General Public License v3.0 (GPLv3)}.
+    \item \textbf{Documentation License:} The report and visualizations are licensed under the \textbf{Creative Commons Attribution 4.0 International (CC-BY 4.0)}.
+\end{itemize}
 
 \end{document}
